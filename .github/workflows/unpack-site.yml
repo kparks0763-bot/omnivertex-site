@@ -1,0 +1,38 @@
+name: Unpack OmniVertex Website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "OmniVertex_GitHub_Deploy.zip"
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Unpack website into repository root
+        run: |
+          rm -rf /tmp/omnivertex-site
+          mkdir -p /tmp/omnivertex-site
+          unzip -q -o OmniVertex_GitHub_Deploy.zip -d /tmp/omnivertex-site
+          find . -mindepth 1 -maxdepth 1             ! -name '.git'             ! -name '.github'             ! -name 'README.md'             ! -name 'OmniVertex_GitHub_Deploy.zip'             -exec rm -rf {} +
+          cp -a /tmp/omnivertex-site/. .
+          rm -f OmniVertex_GitHub_Deploy.zip
+
+      - name: Commit deployed site files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No site changes to commit."
+          else
+            git commit -m "Deploy OmniVertex website files"
+            git push
+          fi
